@@ -21,8 +21,11 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.resource.FontRegistry;
@@ -70,6 +73,9 @@ import com.essiembre.eclipse.rbe.ui.editor.ResourceBundleEditor;
 import com.essiembre.eclipse.rbe.ui.editor.resources.ResourceManager;
 import com.essiembre.eclipse.rbe.ui.editor.resources.SourceEditor;
 
+import io.github.firemaples.language.Language;
+import io.github.firemaples.translate.Translate;
+
 /**
  * Represents a data entry section for a bundle entry.
  * @author Pascal Essiembre
@@ -91,6 +97,7 @@ public class BundleEntryComposite extends Composite {
     private Button gotoButton;
     private Button duplButton;
     private Button simButton;
+    private Button mtButton;
 
     /*default*/ String activeKey;
     /*default*/ String textBeforeUpdate;
@@ -369,6 +376,55 @@ public class BundleEntryComposite extends Composite {
                     body += "        " + iter.next().getKey() + "\n";
                 }
                 MessageDialog.openInformation(getShell(), head, body); 
+            }
+        });
+        
+        //azure translate button
+        gridData = new GridData();
+        gridData.horizontalAlignment = GridData.END;
+        mtButton = new Button(labelComposite, SWT.PUSH | SWT.FLAT);
+        mtButton.setImage(UIUtils.getImage("warning.gif"));
+        mtButton.setLayoutData(gridData);
+        mtButton.setVisible(RBEPreferences.getAzureApiKey() != null && !RBEPreferences.getAzureApiKey().isEmpty());
+        mtButton.setToolTipText( RBEPlugin.getString("value.azure.translate"));
+        mtButton.addSelectionListener(new SelectionAdapter() {
+            public void widgetSelected(SelectionEvent event) {
+				// extract set of language / translation pairs from resourceManager
+				final HashMap<String, String> currentValues = new HashMap<>();
+				resourceManager.getLocales().stream().forEach(l -> {
+					String value = resourceManager.getBundleGroup().getBundle(l).getEntry(activeKey).getValue();
+					currentValues.put(l.getLanguage(), value);
+				});
+				//initialize translation api
+				try {
+					Translate.setSubscriptionKey(RBEPreferences.getAzureApiKey());
+				} catch (Exception e) {
+					MessageDialog.openInformation(getShell(), "ERROR", e.getMessage());
+				}
+				//get prioritized source locales from config
+				String localePrio = "en,de,fr";
+				if (RBEPreferences.getAzureLocalePrio() != null && !RBEPreferences.getAzureLocalePrio().isEmpty())
+					localePrio = RBEPreferences.getAzureLocalePrio();
+				List<String> locales = Stream.of(localePrio.split(",")).collect(Collectors.toList());
+
+				//first the first filled source locale in the prioritized list
+				String sourceLocale = locales.stream()
+						.filter(l -> currentValues.get(l) != null && !currentValues.get(l).isEmpty()).findFirst()
+						.orElse(null);
+				String source = currentValues.getOrDefault(sourceLocale, null);
+				//translate and fill 
+				if (source != null) {
+					try {
+						String target = Translate.execute(source, Language.fromString(sourceLocale),
+								Language.fromString(locale.getLanguage()));
+						IDocument document = new Document();
+						document.set(target);
+						textViewer.setDocument(document);
+					} catch (Exception e) {
+						MessageDialog.openInformation(getShell(), "ERROR", e.getMessage());
+					}
+				}
+            	
             }
         });
 

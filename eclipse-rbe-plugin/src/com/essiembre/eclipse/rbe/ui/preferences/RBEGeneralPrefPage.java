@@ -54,7 +54,8 @@ public class RBEGeneralPrefPage extends AbstractRBEPrefPage {
    private Button noTreeInEditor;
 
    private Text minHeight;
-
+   private Text azureApiKey;
+   private Text azureLocalePrio;
    /**
     * Constructor.
     */
@@ -86,6 +87,9 @@ public class RBEGeneralPrefPage extends AbstractRBEPrefPage {
       prefs.setValue(RBEPreferences.NO_TREE_IN_EDITOR, 
               noTreeInEditor.getSelection());
       prefs.setValue(RBEPreferences.MIN_HEIGHT, minHeight.getText());
+      prefs.setValue(RBEPreferences.AZURE_API_KEY, azureApiKey.getText());
+
+      prefs.setValue(RBEPreferences.AZURE_LOCALE_PRIO, azureLocalePrio.getText());
 
       return super.performOk();
    }
@@ -180,6 +184,16 @@ public class RBEGeneralPrefPage extends AbstractRBEPrefPage {
       minHeight.addKeyListener(new IntTextValidatorKeyListener(
               RBEPlugin.getString("prefs.minHeight.error")));        
 
+      new Label(field, SWT.NONE).setText(
+          RBEPlugin.getString("prefs.azureApiKey"));
+	  azureApiKey = new Text(field, SWT.BORDER);
+	  azureApiKey.setText(prefs.getString(RBEPreferences.AZURE_API_KEY));
+	  
+	  new Label(field, SWT.NONE).setText(
+	          RBEPlugin.getString("prefs.azureLocalePrio"));
+	  azureLocalePrio = new Text(field, SWT.BORDER);
+	  azureLocalePrio.setText(prefs.getString(RBEPreferences.AZURE_LOCALE_PRIO));
+		  
       return composite;
    }
 

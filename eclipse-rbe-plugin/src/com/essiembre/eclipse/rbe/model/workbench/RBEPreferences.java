@@ -135,6 +135,9 @@ public final class RBEPreferences {
     public static final String MIN_HEIGHT = "minHeight";
 //    public static final String AUTO_ADJUST = "autoAdjust";                               
 
+    public static final String AZURE_API_KEY = "azureKey";
+
+    public static final String AZURE_LOCALE_PRIO = "azureLocalePrio";
     
     public static final String PREFERENCE_ID = "eclipse-rbe-preferences";
     
@@ -405,5 +408,20 @@ public final class RBEPreferences {
     public static double getReportSimilarValuesPrecision() {
         return PREFS.getDouble(REPORT_SIM_VALUES_PRECISION);
     }
-
+    
+    /**
+     * Gets the Azure API key for machine translateion
+     * @return string containing key, can be null
+     */
+    public static String getAzureApiKey() {
+        return PREFS.getString(AZURE_API_KEY);
+    }
+    
+    /**
+     * Gets the priority for source locale to use with Azure
+     * @return string containing comma separated list of locale keys, can be null
+     */
+    public static String getAzureLocalePrio() {
+        return PREFS.getString(AZURE_LOCALE_PRIO );
+    }
 }
