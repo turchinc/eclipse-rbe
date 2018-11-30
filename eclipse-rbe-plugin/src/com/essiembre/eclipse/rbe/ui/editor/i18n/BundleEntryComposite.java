@@ -60,6 +60,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.texteditor.ITextEditor;
 
 import com.essiembre.eclipse.rbe.RBEPlugin;
+import com.essiembre.eclipse.rbe.model.bundle.Bundle;
 import com.essiembre.eclipse.rbe.model.bundle.BundleEntry;
 import com.essiembre.eclipse.rbe.model.bundle.BundleGroup;
 import com.essiembre.eclipse.rbe.model.bundle.visitors.DuplicateValuesVisitor;
@@ -392,8 +393,7 @@ public class BundleEntryComposite extends Composite {
 				// extract set of language / translation pairs from resourceManager
 				final HashMap<String, String> currentValues = new HashMap<>();
 				resourceManager.getLocales().stream().forEach(l -> {
-					String value = resourceManager.getBundleGroup().getBundle(l).getEntry(activeKey).getValue();
-					currentValues.put(l.getLanguage(), value);
+					handleLocale(currentValues, l);
 				});
 				//initialize translation api
 				try {
@@ -401,8 +401,8 @@ public class BundleEntryComposite extends Composite {
 				} catch (Exception e) {
 					MessageDialog.openInformation(getShell(), "ERROR", e.getMessage());
 				}
-				//get prioritized source locales from config
-				String localePrio = "en,de,fr";
+				//get prioritized source locales from config (nn if null/default locale)
+				String localePrio = "nn,en,de,fr";
 				if (RBEPreferences.getAzureLocalePrio() != null && !RBEPreferences.getAzureLocalePrio().isEmpty())
 					localePrio = RBEPreferences.getAzureLocalePrio();
 				List<String> locales = Stream.of(localePrio.split(",")).collect(Collectors.toList());
@@ -420,12 +420,24 @@ public class BundleEntryComposite extends Composite {
 						IDocument document = new Document();
 						document.set(target);
 						textViewer.setDocument(document);
+						textViewer.setSelectedRange(0, target.length());
 					} catch (Exception e) {
 						MessageDialog.openInformation(getShell(), "ERROR", e.getMessage());
 					}
 				}
             	
             }
+
+			private void handleLocale(HashMap<String, String> currentValues, Locale currentLocale) {
+				try {
+					String code = currentLocale != null ? currentLocale.getLanguage() : "nn";
+					Bundle b = resourceManager.getBundleGroup().getBundle(currentLocale);
+					String value = (b != null && b.getEntry(activeKey) != null) ? b.getEntry(activeKey).getValue() : "";
+					currentValues.put(code, value);
+				} catch (Exception e) {
+					MessageDialog.openInformation(getShell(), "ERROR",  e.getMessage());
+				}
+			}
         });
 
         // Commented checkbox
@@ -928,6 +940,7 @@ public class BundleEntryComposite extends Composite {
         }
         return SWT.LEFT_TO_RIGHT;
     }
+    
 }
 
 
